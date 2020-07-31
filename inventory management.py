@@ -281,6 +281,7 @@ class SignUp(tk.Frame):
                 passwor.delete(0,END)
                 con_pass.delete(0,END)
 
+
 class MainPage(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -306,134 +307,6 @@ class MainPage(tk.Frame):
         button_main.place(x=250, y=250, width=150, height=40)
         Label(self, text="                                             Inventory Management System                               ", font=("Times New Roman", 15, 'bold'), bg="black", fg="white").place(x=0, y=515)
 
-
-class Assign_items(tk.Frame):
-
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        
-        Label(self, text="Assign Inventory Item To Peoples", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").pack(fill=X)
-
-        photo = PhotoImage(file = 'img.png')
-        l = Label(self, image=photo)
-        l.image=photo
-        l.pack()
-
-        Label(self, text=" Assigned To", font=("Times new Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=70)
-        
-        assigned_to_var = StringVar()
-        assigned_to_name = ttk.Entry(self, width=20, textvariable=assigned_to_var)
-        assigned_to_name.place(x=270, y=70)
-        assigned_to_name.focus()
-
-        Label(self, text="Item Name", font=("Times New Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=100)
-
-        conn = sqlite3.connect("Inventory.db")
-        c = conn.cursor()
-        find_data= ("SELECT item_name FROM inventory")
-        c.execute(find_data)
-        resultss=c.fetchall()
-
-
-        item_name_var = StringVar()
-        assigned_item_name = ttk.Combobox(self, width=17, textvariable=item_name_var,font=("Times New Roman", 10), state='readonly')
-        assigned_item_name['values'] = resultss
-        assigned_item_name.place(x=270, y=100)
-
-
-        Label(self, text="Item Quantity", font=("Times New Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=130)
-
-        item_quantity_var = StringVar()
-        assigned_item_quantitiy = ttk.Entry(self, width=20, textvariable=item_quantity_var)
-        assigned_item_quantitiy.place(x=270, y=130)
-
-        btn_emp = ttk.Button(self, text="Assign Item", command= lambda: save_assigned_data())
-        btn_emp.place(x=270, y=160,width=140, height=40)
-
-        btn_emp = ttk.Button(self, text="Refresh", command= lambda: refresh())
-        btn_emp.place(x=270, y=210,width=140, height=40)
-        btn_back = ttk.Button(self, text="Back", command= lambda: controller.show_frame(MainPage))
-        btn_back.place(x=5, y=50)
-        Label(self, text="                                             Inventory Management System                               ", font=("Times New Roman", 15, 'bold'), bg="black", fg="white").place(x=0, y=515)
-
-
-        def refresh():
-            a = assigned_item_name.get()
-            conn = sqlite3.connect("Inventory.db")
-            c = conn.cursor()
-            find_data= ("SELECT item_name FROM inventory")
-            c.execute(find_data)
-            resultss=c.fetchall()
-            assigned_item_name['values'] = resultss
-
-        def save_assigned_data():
-            assigned_name_error = assigned_to_var.get()
-            assigned_item_name_error = item_name_var.get()
-            assigned_quantity_error = item_quantity_var.get()
-            try:
-                item_assigned_quantity = int(float(assigned_quantity_error))
-            except ValueError:
-                messagebox.showerror("Invalid", "Please Enter Only Integer In Quantity")
-            if assigned_name_error == "":
-                messagebox.showerror("Invalid", "Please Enter Name Of the Person.")
-            elif len(assigned_item_name_error) == 0:
-                messagebox.showerror("Invalid", "Please Select An Item")
-            elif assigned_quantity_error == "":
-                messagebox.showerror("Invalid", "Please Enter Quantity Of Item.")
-            elif True:
-                    try:
-                        int(assigned_quantity_error)
-                    except ValueError:
-                        pass
-                    else:
-                        date_object = datetime.now()
-                        date_now = date_object.strftime("%Y-%m-%d")
-                        time_now = date_object.strftime("%H:%M:%S")
-    
-                        conn = sqlite3.connect("Inventory.db")
-                        c = conn.cursor()
-                        c.execute("CREATE TABLE IF NOT EXISTS assigned(id integer unique primary key autoincrement, person_name TEXT, item_name TEXT, item_quantity INT, assigned_time TEXT, assigned_date TEXT)")
-                        c.execute('SELECT item_quantity FROM inventory WHERE item_name = :item', {'item': str(assigned_item_name.get())})
-                        i = c.fetchall()
-                        try:
-                            item_availble_quantity = i[0][0]
-                        except IndexError:
-                            messagebox.showerror("Invalid", "Item Is No Longer Availble In Inventory Please Refresh")
-                        try:
-                            remaining_quantity = item_availble_quantity - item_assigned_quantity
-                        except UnboundLocalError:
-                            pass
-                        try:                        
-                            if remaining_quantity == 0:
-                                c.execute('SELECT item_name FROM inventory WHERE item_name = :item', {'item': str(assigned_item_name.get())})
-                                i = c.fetchall()
-                                try:
-                                    item_name_availble = i[0][0]
-                                except IndexError:
-                                    messagebox.showerror("Invalid", "Item Is No Longer Availble In Inventory Please Refresh")
-                                print(item_name_availble)
-                                c.execute("DELETE FROM inventory WHERE item_name = (?) ", [item_name_availble])
-                                conn.commit()
-                                assigned_to_name.delete(0, END)
-                                print([assigned_item_name.get()])
-                                assigned_item_quantitiy.delete(0, END)
-                                messagebox.showinfo("Quantity", "All the items of this "+str(item_name_var.get())+" Are Assigned No More Quantity Is Availble")
-                        
-                        # elif item_availble_quantity == 0:
-                        #     c.execute("DELETE FROM inventory WHERE item_name = :item",{'item': str(assigned_item_name.get())})
-
-                            elif remaining_quantity < 0:
-                                messagebox.showerror("Invalid", "Item Quantity Exceeds From Availble Quantity Please Check Availble Quantity From Inventory")
-                        
-                            else:
-                                c.execute('INSERT INTO assigned (person_name, item_name, item_quantity, assigned_time, assigned_date) VALUES (?,?,?,?,?)',(assigned_to_name.get(), assigned_item_name.get(), assigned_item_quantitiy.get(), time_now, date_now ))
-                                c.execute('UPDATE inventory SET item_quantity = :quantity WHERE item_name = :item',{'item': str(assigned_item_name.get()), "quantity": remaining_quantity})
-                                conn.commit()
-                                assigned_to_name.delete(0, END)
-                                assigned_item_quantitiy.delete(0, END)
-                                messagebox.showinfo("Success", "Items Are Assigned Successfully")
-                        except IndexError:
-                            messagebox.showerror("Invalid", "Item No Longer Availble Please Refresh")
 
 class Inventory(tk.Frame):
 
@@ -536,12 +409,17 @@ class Inventory(tk.Frame):
                             conn = sqlite3.connect("Inventory.db")
                             c = conn.cursor()
                             c.execute("CREATE TABLE IF NOT EXISTS inventory(id integer unique primary key autoincrement, item_name TEXT, item_price INT, item_quantity INT)")
-                            c.execute('INSERT INTO inventory (item_name, item_price, item_quantity) VALUES (?,?,?)',(item_name_var.get(), item_price_var.get(), item_quantity_var.get()))
-                            conn.commit()
-                            item_name_inventory.delete(0, END)
-                            item_price_inventory.delete(0, END)
-                            item_quantity_inventory.delete(0, END)
-                            messagebox.showinfo("Success", "Item added Successfully Please Refresh")
+                            c.execute('SELECT item_name FROM inventory WHERE item_name = :item', {'item': str(item_name_inventory.get())})
+                            i = c.fetchall()
+                            if len(i) > 0:
+                                messagebox.showerror("Invalid", "Item "+str(item_name_inventory.get())+ " Already Exists In Inventory. Please Save Using Another Name.")
+                            else:
+                                c.execute('INSERT INTO inventory (item_name, item_price, item_quantity) VALUES (?,?,?)',(item_name_var.get(), item_price_var.get(), item_quantity_var.get()))
+                                conn.commit()
+                                item_name_inventory.delete(0, END)
+                                item_price_inventory.delete(0, END)
+                                item_quantity_inventory.delete(0, END)
+                                messagebox.showinfo("Success", "Item added Successfully Please Refresh")
 
         def show_data():
             conn = sqlite3.connect("Inventory.db")
@@ -649,6 +527,142 @@ class Inventory(tk.Frame):
             elif counter_data == 0:
                 for r in resultss:
                     tree.insert("", tk.END, values=r)
+
+
+class Assign_items(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        
+        Label(self, text="Assign Inventory Item To Peoples", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").pack(fill=X)
+
+        photo = PhotoImage(file = 'img.png')
+        l = Label(self, image=photo)
+        l.image=photo
+        l.pack()
+
+        Label(self, text=" Assigned To", font=("Times new Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=70)
+        
+        assigned_to_var = StringVar()
+        assigned_to_name = ttk.Entry(self, width=20, textvariable=assigned_to_var)
+        assigned_to_name.place(x=270, y=70)
+        assigned_to_name.focus()
+
+        Label(self, text="Item Name", font=("Times New Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=100)
+
+        conn = sqlite3.connect("Inventory.db")
+        c = conn.cursor()
+        find_data= ("SELECT item_name FROM inventory")
+        c.execute(find_data)
+        resultss=c.fetchall()
+
+
+        item_name_var = StringVar()
+        assigned_item_name = ttk.Combobox(self, width=17, textvariable=item_name_var,font=("Times New Roman", 10), state='readonly')
+        assigned_item_name['values'] = resultss
+        assigned_item_name.place(x=270, y=100)
+
+
+        Label(self, text="Item Quantity", font=("Times New Roman", 12, 'bold'), bg="black", fg="white").place(x=150, y=130)
+
+        item_quantity_var = StringVar()
+        assigned_item_quantitiy = ttk.Entry(self, width=20, textvariable=item_quantity_var)
+        assigned_item_quantitiy.place(x=270, y=130)
+
+        btn_emp = ttk.Button(self, text="Assign Item", command= lambda: save_assigned_data())
+        btn_emp.place(x=270, y=160,width=140, height=40)
+
+        btn_emp = ttk.Button(self, text="Refresh", command= lambda: refresh())
+        btn_emp.place(x=270, y=210,width=140, height=40)
+        btn_back = ttk.Button(self, text="Back", command= lambda: controller.show_frame(MainPage))
+        btn_back.place(x=5, y=50)
+        Label(self, text="                                             Inventory Management System                               ", font=("Times New Roman", 15, 'bold'), bg="black", fg="white").place(x=0, y=515)
+
+
+        def refresh():
+            a = assigned_item_name.get()
+            conn = sqlite3.connect("Inventory.db")
+            c = conn.cursor()
+            find_data= ("SELECT item_name FROM inventory")
+            c.execute(find_data)
+            resultss=c.fetchall()
+            assigned_item_name['values'] = resultss
+
+        def save_assigned_data():
+            assigned_name_error = assigned_to_var.get()
+            assigned_item_name_error = item_name_var.get()
+            assigned_quantity_error = item_quantity_var.get()
+            try:
+                item_assigned_quantity = int(float(assigned_quantity_error))
+            except ValueError:
+                messagebox.showerror("Invalid", "Please Enter Only Integer In Quantity")
+            if assigned_name_error == "":
+                messagebox.showerror("Invalid", "Please Enter Name Of the Person.")
+            elif len(assigned_item_name_error) == 0:
+                messagebox.showerror("Invalid", "Please Select An Item")
+            elif assigned_quantity_error == "":
+                messagebox.showerror("Invalid", "Please Enter Quantity Of Item.")
+            elif item_assigned_quantity == 0:
+                messagebox.showerror("Invalid", "Please Enter Quantity More Than 0")
+            elif True:
+                    try:
+                        int(assigned_quantity_error)
+                    except ValueError:
+                        pass
+                    else:
+                        date_object = datetime.now()
+                        date_now = date_object.strftime("%Y-%m-%d")
+                        time_now = date_object.strftime("%H:%M:%S")
+    
+                        conn = sqlite3.connect("Inventory.db")
+                        c = conn.cursor()
+                        c.execute("CREATE TABLE IF NOT EXISTS assigned(id integer unique primary key autoincrement, person_name TEXT, item_name TEXT, item_quantity INT, assigned_time TEXT, assigned_date TEXT)")
+                        c.execute('SELECT item_quantity FROM inventory WHERE item_name = :item', {'item': str(assigned_item_name.get())})
+                        i = c.fetchall()
+                        try:
+                            item_availble_quantity = i[0][0]
+                        except IndexError:
+                            messagebox.showerror("Invalid", "Item Is No Longer Availble In Inventory Please Refresh")
+                        try:
+                            remaining_quantity = item_availble_quantity - item_assigned_quantity
+                        except UnboundLocalError:
+                            pass
+                        try:                        
+                            if remaining_quantity > 0:
+                                c.execute('INSERT INTO assigned (person_name, item_name, item_quantity, assigned_time, assigned_date) VALUES (?,?,?,?,?)',(assigned_to_name.get(), assigned_item_name.get(), assigned_item_quantitiy.get(), time_now, date_now ))
+                                c.execute('UPDATE inventory SET item_quantity = :quantity WHERE item_name = :item',{'item': str(assigned_item_name.get()), "quantity": remaining_quantity})
+                                conn.commit()
+                                assigned_to_name.delete(0, END)
+                                assigned_item_quantitiy.delete(0, END)
+                                messagebox.showinfo("Success", "Items Are Assigned Successfully")
+                        
+                        # elif item_availble_quantity == 0:
+                        #     c.execute("DELETE FROM inventory WHERE item_name = :item",{'item': str(assigned_item_name.get())})
+
+                            elif remaining_quantity < 0:
+                                messagebox.showerror("Invalid", "Item Quantity Exceeds From Availble Quantity Please Check Availble Quantity From Inventory")
+                        
+                            elif remaining_quantity == 0:
+                                c.execute('SELECT item_name FROM inventory WHERE item_name = :item', {'item': str(assigned_item_name.get())})
+                                i = c.fetchall()
+                                try:
+                                    item_name_availble = i[0][0]
+                                except IndexError:
+                                    messagebox.showerror("Invalid", "Item Is No Longer Availble In Inventory Please Refresh")
+                                print(item_name_availble)
+                                c.execute('INSERT INTO assigned (person_name, item_name, item_quantity, assigned_time, assigned_date) VALUES (?,?,?,?,?)',(assigned_to_name.get(), assigned_item_name.get(), assigned_item_quantitiy.get(), time_now, date_now ))
+                                c.execute("DELETE FROM inventory WHERE item_name = (?) ", [item_name_availble])
+                                conn.commit()
+                                assigned_to_name.delete(0, END)
+                                print([assigned_item_name.get()])
+                                assigned_item_quantitiy.delete(0, END)
+                                messagebox.showinfo("Quantity", "All the items of this "+str(item_name_var.get())+" Are Assigned No More Quantity Is Availble")
+
+
+                        except IndexError:
+                            messagebox.showerror("Invalid", "Item No Longer Availble Please Refresh")
+
+
 
 class View_Record(tk.Frame):
 
@@ -819,6 +833,7 @@ class View_Record(tk.Frame):
                 for r in resultss:
                     tree.insert("", tk.END, values=r)
 
+
 class Developer(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -830,16 +845,16 @@ class Developer(tk.Frame):
         l.image=photo
         l.pack()
 
-        Label(self, text="Developer Name:", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").place(x=50, y=50)
+        Label(self, text="Developed By:", font=("Times New Roman", 30, 'bold'), bg="black", fg="white").place(x=50, y=50)
 
-        Label(self, text="Haider khalil", font=("Times New Roman", 40, 'bold'), bg="black", fg="white").place(x=50, y=80)
+        Label(self, text="* Adeel Liaqat (BSF1603390)", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").place(x=50, y=120)
 
-        Label(self, text="Developer's Email:", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").place(x=50, y=170)
-
-        Label(self, text="(haiderkhalil0000@gmail.com)", font=("Times New Roman", 40, 'bold'), bg="black", fg="white").place(x=50, y=200)
+        Label(self, text="* Rizwan Rustam (BSF1603651)", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").place(x=50, y=170)
 
         Label(self, text="                                             Inventory Management System                               ", font=("Times New Roman", 15, 'bold'), bg="black", fg="white").place(x=0, y=515)
 
+        btn_back = ttk.Button(self, text="Back", command= lambda: controller.show_frame(MainPage))
+        btn_back.place(x=5, y=10)
 
 app = MainClass()
 app.mainloop()
