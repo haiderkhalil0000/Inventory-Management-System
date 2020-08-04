@@ -353,6 +353,9 @@ class Inventory(tk.Frame):
         btn_emp = ttk.Button(self, text="Save To PDF", command= lambda: pdf())
         btn_emp.place(x=70, y=410,width=140, height=40)
 
+        btn_emp = ttk.Button(self, text="Update Data", command= lambda: update())
+        btn_emp.place(x=70, y=460,width=140, height=40)
+
         Label(self, text="Search By Item Name Here",font=("Times New Roman", 15, 'bold'), bg="black", fg="white").place(x=150, y=10)
         search_var = StringVar()
         search = ttk.Entry(self,width=20, textvariable=search_var)
@@ -434,6 +437,73 @@ class Inventory(tk.Frame):
                 conn.close()
             else:
                 messagebox.showerror("Error", "Data Already Shown")
+
+
+        def update():
+            conn = sqlite3.connect("Inventory.db")
+            c = conn.cursor()
+            try:
+                id = tree.item(tree.selection())['values']
+                dlt_id = id[0]
+                c.execute("SELECT * FROM inventory WHERE id=?;", ([(dlt_id)]))
+                all_data = c.fetchall()
+                update_id= all_data[0][0]
+                old_price = all_data[0][2]
+                old_quantity = all_data[0][3]
+                top = Tk()
+                top.geometry("300x400")
+                top.title("Update Record")
+                frame = Frame(top)
+                Label(top, text="Update Data", font=("Times New Roman", 20, 'bold'), bg="black", fg="white").pack(fill="x")
+
+                Label(top, text="Old Item Price").pack()
+                Entry(top, width=30, textvariable=StringVar(top, value=old_price), state='readonly').pack()
+
+                Label(top, text="New Item Price").pack()
+                new_value_price_var = StringVar()
+                new_value_price = ttk.Entry(top, width=30, textvariable= new_value_price_var)
+                new_value_price.pack()
+
+                Label(top, text="Old Item Quantity").pack()
+                Entry(top, width=30, textvariable=StringVar(top, value=old_quantity), state='readonly').pack()
+                
+                Label(top, text="New Item Quantity").pack()
+                new_value_quantity_var = StringVar()
+                new_value_quantity = ttk.Entry(top, width=30, textvariable= new_value_quantity_var)
+                new_value_quantity.pack()
+                
+                btn_update = ttk.Button(top, width=12, text="Update", command= lambda:update_record(old_price, old_quantity, new_value_price.get(), new_value_quantity.get()))
+                btn_update.pack()
+                frame.pack()
+                
+                def update_record(price, quantity, new_price, new_quantity):
+                    if new_price == "":
+                        messagebox.showerror("Error", "Please Enter New Price")
+                    elif True:
+                        try:
+                            int(new_price)
+                        except ValueError:
+                            messagebox.showerror("Invalid", "Please Enter Only Integer In Price")
+                        else:
+                            if new_quantity == "":
+                                messagebox.showerror("Error", "Please Enter New Quantity")
+
+                            elif True:
+                                try:
+                                    int(new_quantity)
+                                except ValueError:
+                                    messagebox.showerror("Invalid", "Please Enter Only Integer In Quantity")
+                                else:
+                                    conn = sqlite3.connect("Inventory.db")
+                                    c = conn.cursor()
+                                    c.execute('UPDATE inventory SET item_price = :new_price WHERE item_price = :price',{'price': price, "new_price": new_price})
+                                    c.execute('UPDATE inventory SET item_quantity = :new_quantity WHERE item_quantity = :quantity',{'quantity': quantity, "new_quantity": new_quantity})
+                                    conn.commit()
+                                    messagebox.showinfo("Success", "Record Is Updated Successfully Please Refresh To See Changes.")
+                                    top.destroy()
+            except IndexError as e:
+                messagebox.showerror("Error", "Please Select A Record")
+
 
         def refresh():
             for i in tree.get_children():
